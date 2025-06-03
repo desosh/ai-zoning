@@ -36,44 +36,22 @@ pip install -r requirements.txt
 ```
 
 ## Overview
+Our process for using LLMs to parse zoning documents is broadly split into two steps: 1) the **Embedding Step** and 2) the **QA Step** (question-answer step). In the **Embedding Step**, we prepare the questions and relevant input text (ex. zoning codes) for the LLM inference in the **QA Step**. This entails breaking up large documents into logical chunks and embedding these chunks along with the questions for input into the LLM. Note, for a given set of questions and relevant text, this step only needs to be completed once. 
 
-The project is divided into several key components:
+In the **QA Step**, we send each question for each municipality (question-muni pair), along with additional context if relevant, to the LLM of choice and parse its answer. The **QA Step** is wrapped by an sbatch script, which can parrallelize LLM requests and orchestrates resources, environment, and re-queuing, then delegates the actual computation to the Python file.
 
-1. **Embeddings Setup:** This process creates embeddings from raw text and stores them in the defined path.
-2. **LLM Inference:** We use OpenAI models (e.g., GPT-3.5, GPT-4) to process zoning questions and generate structured answers.
-3. **Data Preprocessing:** This includes downloading shape files, merging raw housing/demographic data, and preparing municipality identifier datasets.
-4. **Main Model Code:** The core processing logic handles question-municipality pairs, organizes the data flow, and runs the model using parallel processing.
-
-### For a visual overview of the embedding and inference processes, see the diagrams linked below:
-- Embeddings Workflow
-- Inference Workflow
-
-## Code Structure
-
-The codebase is organized into several key folders and files:
-
-1. **Raw Data**  
-   - Contains the raw zoning and housing-related data necessary for analysis.
-   
-2. **Processed Data**  
-   - Stores the output from embedding processes, LLM inferences, and additional processed datasets.
-   
-3. **Code**  
-   - Split into the following sections:
-     - **Pre-Processing Code:** Prepares raw datasets for analysis, including downloading shape files and merging data.
-     - **Main Model Code:** Runs the core model logic, including LLM inference and embeddings.
-     - **Tables and Figures Code:** Generates the tables and figures used for analysis and reporting.
-
-### Key Files:
-
-- [Configuration Setup](readme/config.md): Defines paths and settings required for the embedding and LLM processes, including API keys and paths to data directories.
-- [Context Building Code](readme/context_building.md): Builds the context needed to process and answer zoning-related questions.
-- [Embedding Code](readme/embedding.md): Manages embedding processes, ensuring raw text is split into manageable sections.
-- [GPT Functions](readme/gpt_functions.md): Helper functions for interacting with OpenAI's API, including token counting and batching logic.
-- [Helper Functions](readme/helper_functions.md): Utility functions for data management and error handling.
-- [Question-Answer Code](readme/qa_code.md): Core logic for processing question-municipality pairs and managing LLM inferences.
-- [Question-Municipality Pairing](readme/question_muni_pair.md): Manages the lifecycle of question-municipality pairs, including initialization and embedding.
-- [Model Batch Process](readme/model_batch.md): Batch processing logic for SLURM job arrays, allowing for distributed computing across nodes.
+## Code structure
+The code files that carry out the two main steps above can be split into 4 groups
+1. **Configuration File** - *config.ymal* -defines paths and settings required for the embedding and LLM processes, including API keys and paths to data directories
+2. **Main Code** - these files carry out the two main steps detailed above
+   1. **Embedding Step** - *embeddings.py* - embeds the text and prepares it for input into the QA code
+   2. **QA Step** - *QA_Code.py* - carries out the LLM answer request 
+3. **Helper Functions** - these files provide the functions that are employed in the embedding and QA code
+   - *helper_functions.py* - provides the main set of functions used in the QA code (this code calls on all of the ensuing helper functions)
+   - *question_muni_pair.py* - establishes a class that captures the relevant data associated with and functions needed for each question-muni pair
+   - *gpt_functions.py* - establishes functions necessary for interfacing with the LLMs in the embedding and QA step
+   - *context_building.py* - builds the context needed to answer relevant question, such as ranking the text chunks in order of relevance to the question at hand
+4. **Sbatch script** - *model_batch.sbatch* - batch processing logic for SLURM job arrays, allowing for distributed computing across nodes
 
 ## Data Structure
 
